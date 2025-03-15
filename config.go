@@ -1,4 +1,4 @@
-package pkg
+package oss_aliyun
 
 import (
 	"fmt"

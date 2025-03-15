@@ -1,9 +1,10 @@
-package pkg
+package oss_aliyun
 
 import (
 	"bytes"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/hdget/common/intf"
+	"github.com/hdget/common/types"
 	"path"
 	"time"
 )
@@ -22,17 +23,11 @@ func New(configProvider intf.ConfigProvider, logger intf.LoggerProvider) (intf.O
 		return nil, err
 	}
 
-	provider := &aliyunOssProvider{config: config}
-	err = provider.Init()
-	if err != nil {
-		logger.Fatal("init mysql provider", "err", err)
-	}
-
-	return provider, nil
+	return &aliyunOssProvider{config: config}, nil
 }
 
-func (p *aliyunOssProvider) Init(args ...any) error {
-	return nil
+func (p *aliyunOssProvider) GetCapability() types.Capability {
+	return Capability
 }
 
 func (p *aliyunOssProvider) Upload(rootDir, filename string, data []byte) (string, error) {
