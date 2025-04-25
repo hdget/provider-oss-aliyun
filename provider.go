@@ -32,12 +32,12 @@ func (p *aliyunOssProvider) GetCapability() types.Capability {
 
 func (p *aliyunOssProvider) Upload(rootDir, filename string, data []byte) (string, error) {
 	// 获取存储空间
-	client, err := oss.New(p.config.endpoint, p.config.accessKey, p.config.accessSecret)
+	client, err := oss.New(p.config.Endpoint, p.config.AccessKey, p.config.AccessSecret)
 	if err != nil {
 		return "", err
 	}
 
-	buk, err := client.Bucket(p.config.bucket)
+	buk, err := client.Bucket(p.config.Bucket)
 	if err != nil {
 		return "", err
 	}

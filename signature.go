@@ -38,7 +38,7 @@ func (p *aliyunOssProvider) GenSignature(dir string) (*AliyunOssSignature, error
 
 	// create post policy json
 	stdPolicyData := base64.StdEncoding.EncodeToString(policyData)
-	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(p.config.accessSecret))
+	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(p.config.AccessSecret))
 	_, err = io.WriteString(h, stdPolicyData)
 	if err != nil {
 		return nil, err
@@ -47,8 +47,8 @@ func (p *aliyunOssProvider) GenSignature(dir string) (*AliyunOssSignature, error
 	signedStr := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
 	return &AliyunOssSignature{
-		AccessKeyId: p.config.accessKey,
-		Host:        p.config.domain,
+		AccessKeyId: p.config.AccessKey,
+		Host:        p.config.Domain,
 		Expire:      expiresIn,
 		Signature:   signedStr,
 		Directory:   dir,
