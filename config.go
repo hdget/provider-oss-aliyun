@@ -8,11 +8,11 @@ import (
 )
 
 type aliyunOssConfig struct {
-	domain       string `mapstructure:"domain"`
-	endpoint     string `mapstructure:"endpoint"`
-	bucket       string `mapstructure:"bucket"`
-	accessKey    string `mapstructure:"access_key"`
-	accessSecret string `mapstructure:"access_secret"`
+	Domain       string `mapstructure:"domain"`
+	Endpoint     string `mapstructure:"endpoint"`
+	Bucket       string `mapstructure:"bucket"`
+	AccessKey    string `mapstructure:"access_key"`
+	AccessSecret string `mapstructure:"access_secret"`
 }
 
 const (
@@ -42,23 +42,23 @@ func newConfig(configProvider intf.ConfigProvider) (*aliyunOssConfig, error) {
 }
 
 func validateConfig(config *aliyunOssConfig) error {
-	if _, err := url.Parse(config.domain); err != nil {
+	if _, err := url.Parse(config.Domain); err != nil {
 		return fmt.Errorf("invalid oss domain")
 	}
 
-	if config.endpoint == "" {
+	if config.Endpoint == "" {
 		return fmt.Errorf("oss endpoint is empty")
 	}
 
-	if config.accessKey == "" {
+	if config.AccessKey == "" {
 		return fmt.Errorf("oss access key is empty")
 	}
 
-	if config.accessSecret == "" {
+	if config.AccessSecret == "" {
 		return fmt.Errorf("oss access secret is empty")
 	}
 
-	if config.bucket == "" {
+	if config.Bucket == "" {
 		return fmt.Errorf("oss bucket is empty")
 	}
 
