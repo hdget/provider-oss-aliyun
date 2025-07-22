@@ -1,110 +1,119 @@
 package oss_aliyun
 
 import (
-	"bytes"
-	"context"
-	"crypto/rand"
-	"fmt"
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
+	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss/credentials"
 	"github.com/hdget/common/intf"
 	"github.com/hdget/common/types"
-	"log"
-	"math"
-	"path"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 type aliyunOssProvider struct {
-	config *aliyunOssConfig
+	config             *aliyunOssConfig
+	allowContentTypes  []string
+	maxFileSize        int64
+	signatureExpiresIn int64
 }
 
-const alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const (
+	defaultSignatureExpiresIn = 180                      // 上传签名默认失效时间, 3分钟
+	defaultMaxFileSize        = int64(100 * 1024 * 1024) // 上传文件的最大尺寸, 100M
+)
 
-func New(configProvider intf.ConfigProvider, logger intf.LoggerProvider) (intf.OssProvider, error) {
+var (
+	// ImageContentTypes 图像类
+	ImageContentTypes = []string{
+		"image/jpeg",
+		"image/png",
+		"image/gif",
+		"image/bmp",
+		"image/webp",
+		"image/svg+xml",
+		"image/webp",
+		"image/tiff",
+		"image/vnd.microsoft.icon",
+	}
+
+	// VideoContentTypes 视频类
+	VideoContentTypes = []string{
+		"video/mp4",
+		"video/mpeg",
+		"video/ogg",
+		"video/webm",
+		"video/quicktime",
+		"video/x-msvideo",
+		"video/x-ms-wmv",
+	}
+
+	// DocumentContentTypes 文档类
+	DocumentContentTypes = []string{
+		"text/plain",
+		"application/vnd.ms-excel",
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+		"application/pdf",
+		"application/msword",
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		"application/vnd.ms-powerpoint",
+		"application/vnd.openxmlformats-officedocument.presentationml.presentation",
+		"text/html",
+		"application/json",
+	}
+
+	// ZipContentTypes 压缩类
+	ZipContentTypes = []string{
+		"application/zip",
+		"application/gzip",
+		"application/x-tar",
+		"application/x-rar-compressed",
+	}
+)
+
+func New(configProvider intf.ConfigProvider) (intf.OssProvider, error) {
 	config, err := newConfig(configProvider)
 	if err != nil {
 		return nil, err
 	}
 
-	return &aliyunOssProvider{config: config}, nil
+	return &aliyunOssProvider{
+		config:             config,
+		allowContentTypes:  make([]string, 0),
+		maxFileSize:        defaultMaxFileSize,
+		signatureExpiresIn: defaultSignatureExpiresIn,
+	}, nil
 }
 
 func (p *aliyunOssProvider) GetCapability() types.Capability {
 	return Capability
 }
 
-func (p *aliyunOssProvider) Upload(dir, filename string, data []byte) (string, error) {
-	objectKey := p.getObjectKey(dir, filename)
-
-	putRequest := &oss.PutObjectRequest{
-		Bucket:       oss.Ptr(p.config.Bucket), // 存储空间名称
-		Key:          oss.Ptr(objectKey),       // 存储对象路径
-		Body:         bytes.NewReader(data),
-		StorageClass: oss.StorageClassStandard, // 指定对象的存储类型为标准存储
-		Acl:          oss.ObjectACLPublicRead,  // 指定对象的访问权限
-		Metadata: map[string]string{
-			"yourMetadataKey1": "yourMetadataValue1", // 设置对象的元数据
-		},
+func (p *aliyunOssProvider) SetContentTypes(contentTypes []string) *aliyunOssProvider {
+	if len(contentTypes) > 0 {
+		p.allowContentTypes = contentTypes
 	}
-
-	// 执行上传对象的请求
-	_, err := oss.NewClient(oss.LoadDefaultConfig()).PutObject(context.TODO(), putRequest)
-	if err != nil {
-		log.Fatalf("failed to put object from file %v", err)
-	}
-
-	return objectKey, nil
+	return p
 }
 
-func (p *aliyunOssProvider) getObjectKey(dir, filename string) string {
-	strDate := time.Now().Format("20060102")
-	year, month, day := strDate[:4], strDate[4:6], strDate[6:8]
-	return path.Join(dir, year, month, day, generateSafeFileName(filename))
-}
-
-func generateSafeFileName(filename string) string {
-	safeFileName := filepath.Base(filename)                   // 移除路径分隔符
-	safeFileName = strings.ReplaceAll(safeFileName, " ", "_") // 替换空格等特殊字符
-
-	ext := filepath.Ext(safeFileName)
-	name := safeFileName[0 : len(safeFileName)-len(ext)]
-
-	return fmt.Sprintf("%s_%s%s", name, randStr(6), ext) // 防止相同文件名被覆盖
-}
-
-func randStr(size int) string { // 高效随机字符串
-	chars := []rune(alphabet)
-	mask := getMask(len(chars))
-	// estimate how many random bytes we will need for the ID, we might actually need more but this is tradeoff
-	// between average case and worst case
-	ceilArg := 1.6 * float64(mask*size) / float64(len(alphabet))
-	step := int(math.Ceil(ceilArg))
-
-	id := make([]rune, size)
-	bytes := make([]byte, step)
-	for j := 0; ; {
-		_, _ = rand.Read(bytes)
-		for i := 0; i < step; i++ {
-			currByte := bytes[i] & byte(mask)
-			if currByte < byte(len(chars)) {
-				id[j] = chars[currByte]
-				j++
-				if j == size {
-					return string(id[:size])
-				}
-			}
-		}
+func (p *aliyunOssProvider) SetMaxFileSize(size int64) *aliyunOssProvider {
+	if size > 0 {
+		p.maxFileSize = size
 	}
+	return p
 }
 
-func getMask(alphabetSize int) int {
-	for i := 1; i <= 8; i++ {
-		mask := (2 << uint(i)) - 1
-		if mask >= alphabetSize-1 {
-			return mask
-		}
+func (p *aliyunOssProvider) SetSignatureExpires(expiresIn int64) *aliyunOssProvider {
+	if expiresIn > 0 {
+		p.signatureExpiresIn = expiresIn
 	}
-	return 0
+	return p
+}
+
+func (p *aliyunOssProvider) newOSSClient() *oss.Client {
+	// 构建凭证提供者
+	credProvider := credentials.NewStaticCredentialsProvider(p.config.AccessKey, p.config.AccessSecret)
+
+	// 创建OSS配置
+	ossCfg := oss.LoadDefaultConfig().
+		WithCredentialsProvider(credProvider).
+		WithRegion(p.config.Region) // region: cn-shanghai, 不需要带oss
+
+	return oss.NewClient(ossCfg)
 }

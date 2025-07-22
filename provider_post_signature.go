@@ -17,14 +17,9 @@ type AliyunOssSignature struct {
 	Policy      string
 }
 
-const (
-	defaultExpireTime  = 600
-	defaultMaxFileSize = int64(10 * 1024 * 1024)
-)
-
 // GetPostSignature 生成oss直传post签名
 func (p *aliyunOssProvider) GetPostSignature(dir string) (*AliyunOssSignature, error) {
-	policyBase64, policySigned, err := p.generatePolicy(dir, defaultExpireTime)
+	policyBase64, policySigned, err := p.generatePolicy(dir, defaultSignatureExpiresIn)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +27,7 @@ func (p *aliyunOssProvider) GetPostSignature(dir string) (*AliyunOssSignature, e
 	return &AliyunOssSignature{
 		AccessKeyId: p.config.AccessKey,
 		Host:        p.config.Domain,
-		ExpireIn:    defaultExpireTime,
+		ExpireIn:    defaultSignatureExpiresIn,
 		Signature:   policySigned,
 		Directory:   dir,
 		Policy:      policyBase64,
