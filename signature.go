@@ -5,74 +5,62 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
-	"hash"
-	"io"
 	"time"
 )
-
-type aliyunOssPolicy struct {
-	Expiration string     `json:"expiration"`
-	Conditions [][]string `json:"conditions"`
-}
 
 type AliyunOssSignature struct {
 	AccessKeyId string
 	Host        string
-	Expire      int64
+	ExpireIn    int64
 	Signature   string
 	Directory   string
 	Policy      string
 }
 
 const (
-	defaultExpireTime = 600
+	defaultExpireTime  = 600
+	defaultMaxFileSize = int64(10 * 1024 * 1024)
 )
 
-// GenSignature 生成oss直传token
-func (p *aliyunOssProvider) GenSignature(dir string) (*AliyunOssSignature, error) {
-	expiresIn := time.Now().Unix() + defaultExpireTime
-	policyData, err := p.getPolicyData(dir, expiresIn)
+// GetPostSignature 生成oss直传post签名
+func (p *aliyunOssProvider) GetPostSignature(dir string) (*AliyunOssSignature, error) {
+	policyBase64, policySigned, err := p.generatePolicy(dir, defaultExpireTime)
 	if err != nil {
 		return nil, err
 	}
-
-	// create post policy json
-	stdPolicyData := base64.StdEncoding.EncodeToString(policyData)
-	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(p.config.AccessSecret))
-	_, err = io.WriteString(h, stdPolicyData)
-	if err != nil {
-		return nil, err
-	}
-
-	signedStr := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
 	return &AliyunOssSignature{
 		AccessKeyId: p.config.AccessKey,
 		Host:        p.config.Domain,
-		Expire:      expiresIn,
-		Signature:   signedStr,
+		ExpireIn:    defaultExpireTime,
+		Signature:   policySigned,
 		Directory:   dir,
-		Policy:      stdPolicyData,
+		Policy:      policyBase64,
 	}, nil
 }
 
-func (a *aliyunOssProvider) getPolicyData(dir string, expiresIn int64) ([]byte, error) {
-	strExpireTime := time.Unix(expiresIn, 0).UTC().Format("2006-01-02T15:04:05Z")
-
-	// 指定此次上传的文件名必须以user-dir开头
-	condition := []string{"starts-with", "$key", dir}
-	config := aliyunOssPolicy{
-		Expiration: strExpireTime,
-		Conditions: [][]string{
-			condition,
+// generatePolicy 生成访问策略
+func (p *aliyunOssProvider) generatePolicy(dir string, expiresIn int64) (string, string, error) {
+	// 定义策略
+	policy := map[string]any{
+		"expiration": time.Now().Add(time.Duration(expiresIn) * time.Second).Format("2006-01-02T15:04:05Z"), // 多少秒后签名过期
+		"conditions": [][]any{
+			{"starts-with", "$key", dir},                    // 限制上传目录， 上传的文件名必须以dir开头
+			{"content-length-range", 1, defaultMaxFileSize}, // 文件大小限制
 		},
 	}
 
-	// calculate signature
-	data, err := json.Marshal(config)
+	policyJSON, err := json.Marshal(policy)
 	if err != nil {
-		return nil, err
+		return "", "", err
 	}
 
-	return data, nil
+	policyBase64 := base64.StdEncoding.EncodeToString(policyJSON)
+
+	// 生成HMAC-SHA1签名
+	h := hmac.New(sha1.New, []byte(p.config.AccessSecret))
+	h.Write([]byte(policyBase64))
+	policySigned := base64.StdEncoding.EncodeToString(h.Sum(nil))
+
+	return policyBase64, policySigned, nil
 }

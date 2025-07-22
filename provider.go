@@ -42,7 +42,7 @@ func (p *aliyunOssProvider) Upload(rootDir, filename string, data []byte) (strin
 		return "", err
 	}
 
-	absPath := path.Join(rootDir, p.getMiddleDir(), filename)
+	absPath := path.Join(rootDir, p.genTimeBasedDir(), filename)
 
 	// 上传Byte数组
 	err = buk.PutObject(absPath, bytes.NewReader(data))
@@ -53,7 +53,7 @@ func (p *aliyunOssProvider) Upload(rootDir, filename string, data []byte) (strin
 	return absPath, nil
 }
 
-func (p *aliyunOssProvider) getMiddleDir() string {
+func (p *aliyunOssProvider) genTimeBasedDir() string {
 	s := time.Now().Format(defaultMiddleDirFormat)
 	return path.Join(s[:2], s[2:4], s[4:6])
 }
