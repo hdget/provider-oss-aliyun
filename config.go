@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/hdget/common/intf"
 	"github.com/pkg/errors"
-	"net/url"
 )
 
 type aliyunOssConfig struct {
@@ -42,8 +41,8 @@ func newConfig(configProvider intf.ConfigProvider) (*aliyunOssConfig, error) {
 }
 
 func validateConfig(config *aliyunOssConfig) error {
-	if _, err := url.Parse(config.Domain); err != nil {
-		return fmt.Errorf("invalid oss domain")
+	if config.Region == "" {
+		return fmt.Errorf("region is empty")
 	}
 
 	if config.AccessKey == "" {

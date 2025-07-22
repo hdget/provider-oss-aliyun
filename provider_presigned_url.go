@@ -5,7 +5,6 @@ import (
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
 	"github.com/elliotchance/pie/v2"
 	"github.com/pkg/errors"
-	"time"
 )
 
 // GetPresignedURL 生成PutObject的预签名URL
@@ -25,7 +24,7 @@ func (p *aliyunOssProvider) GetPresignedURL(dir, filename, contentType string) (
 		Key:          oss.Ptr(objectKey),
 		ContentType:  oss.Ptr(contentType),
 		StorageClass: oss.StorageClassStandard,
-	}, oss.PresignExpires(time.Duration(p.signatureExpiresIn)*time.Second))
+	}, oss.PresignExpires(p.signExpiresIn))
 	if err != nil {
 		return "", nil, errors.Wrapf(err, "presign, dir: %s, filename: %s", dir, filename)
 	}

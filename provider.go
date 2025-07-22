@@ -5,17 +5,18 @@ import (
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss/credentials"
 	"github.com/hdget/common/intf"
 	"github.com/hdget/common/types"
+	"time"
 )
 
 type aliyunOssProvider struct {
-	config             *aliyunOssConfig
-	allowContentTypes  []string
-	maxFileSize        int64
-	signatureExpiresIn int64
+	config            *aliyunOssConfig
+	allowContentTypes []string
+	maxFileSize       int64
+	signExpiresIn     time.Duration
 }
 
 const (
-	defaultSignatureExpiresIn = 180                      // 上传签名默认失效时间, 3分钟
+	defaultSignatureExpiresIn = 180 * time.Second        // 上传签名默认失效时间, 3分钟
 	defaultMaxFileSize        = int64(100 * 1024 * 1024) // 上传文件的最大尺寸, 100M
 )
 
@@ -74,10 +75,10 @@ func New(configProvider intf.ConfigProvider) (intf.OssProvider, error) {
 	}
 
 	return &aliyunOssProvider{
-		config:             config,
-		allowContentTypes:  make([]string, 0),
-		maxFileSize:        defaultMaxFileSize,
-		signatureExpiresIn: defaultSignatureExpiresIn,
+		config:            config,
+		allowContentTypes: ImageContentTypes,         // 默认允许图片文件上传
+		maxFileSize:       defaultMaxFileSize,        // 默认文件上传大小为100M
+		signExpiresIn:     defaultSignatureExpiresIn, // 默认签名过期时间为3分钟
 	}, nil
 }
 
@@ -85,23 +86,26 @@ func (p *aliyunOssProvider) GetCapability() types.Capability {
 	return Capability
 }
 
-func (p *aliyunOssProvider) SetContentTypes(contentTypes []string) *aliyunOssProvider {
+// WithContentTypes 设置允许的文件类型
+func (p *aliyunOssProvider) WithContentTypes(contentTypes []string) intf.OssProvider {
 	if len(contentTypes) > 0 {
 		p.allowContentTypes = contentTypes
 	}
 	return p
 }
 
-func (p *aliyunOssProvider) SetMaxFileSize(size int64) *aliyunOssProvider {
+// WithMaxFileSize 设置允许最大的文件大小
+func (p *aliyunOssProvider) WithMaxFileSize(size int64) intf.OssProvider {
 	if size > 0 {
 		p.maxFileSize = size
 	}
 	return p
 }
 
-func (p *aliyunOssProvider) SetSignatureExpires(expiresIn int64) *aliyunOssProvider {
+// WithSignExpiresIn 设置签名过期时间，单位为秒
+func (p *aliyunOssProvider) WithSignExpiresIn(expiresIn time.Duration) intf.OssProvider {
 	if expiresIn > 0 {
-		p.signatureExpiresIn = expiresIn
+		p.signExpiresIn = expiresIn
 	}
 	return p
 }
