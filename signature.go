@@ -43,7 +43,8 @@ func (p *aliyunOssProvider) GetPostSignature(dir string) (*AliyunOssSignature, e
 func (p *aliyunOssProvider) generatePolicy(dir string, expiresIn int64) (string, string, error) {
 	// 定义策略
 	policy := map[string]any{
-		"expiration": time.Now().Add(time.Duration(expiresIn) * time.Second).Format("2006-01-02T15:04:05Z"), // 多少秒后签名过期
+		// 多少秒后签名过期
+		"expiration": time.Now().Add(time.Duration(expiresIn) * time.Second).Format("2006-01-02T15:04:05Z"),
 		"conditions": [][]any{
 			{"starts-with", "$key", dir},                    // 限制上传目录， 上传的文件名必须以dir开头
 			{"content-length-range", 1, defaultMaxFileSize}, // 文件大小限制
