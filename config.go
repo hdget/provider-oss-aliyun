@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"github.com/hdget/common/intf"
 	"github.com/pkg/errors"
-	"net/url"
 )
 
 type aliyunOssConfig struct {
+	Region       string `mapstructure:"region"`
 	Domain       string `mapstructure:"domain"`
-	Endpoint     string `mapstructure:"endpoint"`
 	Bucket       string `mapstructure:"bucket"`
 	AccessKey    string `mapstructure:"access_key"`
 	AccessSecret string `mapstructure:"access_secret"`
@@ -42,12 +41,8 @@ func newConfig(configProvider intf.ConfigProvider) (*aliyunOssConfig, error) {
 }
 
 func validateConfig(config *aliyunOssConfig) error {
-	if _, err := url.Parse(config.Domain); err != nil {
-		return fmt.Errorf("invalid oss domain")
-	}
-
-	if config.Endpoint == "" {
-		return fmt.Errorf("oss endpoint is empty")
+	if config.Region == "" {
+		return fmt.Errorf("region is empty")
 	}
 
 	if config.AccessKey == "" {
