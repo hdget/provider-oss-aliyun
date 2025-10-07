@@ -3,7 +3,6 @@ package oss_aliyun
 import (
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss/credentials"
-	"github.com/hdget/common/intf"
 	"github.com/hdget/common/types"
 	"time"
 )
@@ -68,7 +67,7 @@ var (
 	}
 )
 
-func New(configProvider intf.ConfigProvider) (intf.OssProvider, error) {
+func New(configProvider types.ConfigProvider) (types.OssProvider, error) {
 	config, err := newConfig(configProvider)
 	if err != nil {
 		return nil, err
@@ -87,7 +86,7 @@ func (p *aliyunOssProvider) GetCapability() types.Capability {
 }
 
 // WithContentTypes 设置允许的文件类型
-func (p *aliyunOssProvider) WithContentTypes(contentTypes []string) intf.OssProvider {
+func (p *aliyunOssProvider) WithContentTypes(contentTypes []string) types.OssProvider {
 	if len(contentTypes) > 0 {
 		p.allowContentTypes = contentTypes
 	}
@@ -95,7 +94,7 @@ func (p *aliyunOssProvider) WithContentTypes(contentTypes []string) intf.OssProv
 }
 
 // WithMaxFileSize 设置允许最大的文件大小
-func (p *aliyunOssProvider) WithMaxFileSize(size int64) intf.OssProvider {
+func (p *aliyunOssProvider) WithMaxFileSize(size int64) types.OssProvider {
 	if size > 0 {
 		p.maxFileSize = size
 	}
@@ -103,7 +102,7 @@ func (p *aliyunOssProvider) WithMaxFileSize(size int64) intf.OssProvider {
 }
 
 // WithSignExpiresIn 设置签名过期时间，单位为秒
-func (p *aliyunOssProvider) WithSignExpiresIn(expiresIn time.Duration) intf.OssProvider {
+func (p *aliyunOssProvider) WithSignExpiresIn(expiresIn time.Duration) types.OssProvider {
 	if expiresIn > 0 {
 		p.signExpiresIn = expiresIn
 	}
