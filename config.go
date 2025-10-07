@@ -2,7 +2,7 @@ package oss_aliyun
 
 import (
 	"fmt"
-	"github.com/hdget/common/intf"
+	"github.com/hdget/common/types"
 	"github.com/pkg/errors"
 )
 
@@ -22,7 +22,7 @@ var (
 	errInvalidConfig = errors.New("invalid oss provider config")
 )
 
-func newConfig(configProvider intf.ConfigProvider) (*aliyunOssConfig, error) {
+func newConfig(configProvider types.ConfigProvider) (*aliyunOssConfig, error) {
 	if configProvider == nil {
 		return nil, errInvalidConfig
 	}
